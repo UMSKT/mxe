@@ -1,0 +1,19 @@
+Adds a compile-time flag called WIN95_COMPAT_OVERRIDE to winpthreads
+during mingw-w64 compiling to disable the forbidden Add/Remove
+VectoredExceptionHandler functions
+
+
+
+diff --git a/mingw-w64-libraries/winpthreads/src/thread.c b/mingw-w64-libraries/winpthreads/src/thread.c
+index 36ee66536..8793d4dc2 100644
+--- a/mingw-w64-libraries/winpthreads/src/thread.c
++++ b/mingw-w64-libraries/winpthreads/src/thread.c
+@@ -57,7 +57,7 @@ static pthread_t idListNextId = 0;
+ #if !defined(_MSC_VER)
+ #define USE_VEH_FOR_MSC_SETTHREADNAME
+ #endif
+-#if !WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
++#if !WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP) || defined(WIN95_COMPAT_OVERRIDE)
+ /* forbidden RemoveVectoredExceptionHandler/AddVectoredExceptionHandler APIs */
+ #undef USE_VEH_FOR_MSC_SETTHREADNAME
+ #endif
