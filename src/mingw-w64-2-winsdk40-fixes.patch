@@ -1,0 +1,45 @@
+Adds a compile-time flag called WIN95_COMPAT_OVERRIDE to winpthreads
+during mingw-w64 compiling to disable the forbidden Add/Remove
+VectoredExceptionHandler functions
+
+Conditionally removes two function prototypes for functions that do not
+exist in the 4.0 release of windows sdk (win95/nt4)
+
+diff --git a/mingw-w64-headers/include/winreg.h b/mingw-w64-headers/include/winreg.h
+index 0affcacbf..4d15bb8e5 100644
+--- a/mingw-w64-headers/include/winreg.h
++++ b/mingw-w64-headers/include/winreg.h
+@@ -171,8 +171,10 @@ extern "C" {
+   WINADVAPI LONG WINAPI RegOpenKeyW(HKEY hKey,LPCWSTR lpSubKey,PHKEY phkResult);
+   WINADVAPI LONG WINAPI RegQueryValueA(HKEY hKey,LPCSTR lpSubKey,LPSTR lpData,PLONG lpcbData);
+   WINADVAPI LONG WINAPI RegQueryValueW(HKEY hKey,LPCWSTR lpSubKey,LPWSTR lpData,PLONG lpcbData);
++#if (WINVER >= 0x0400)
+   WINADVAPI LONG WINAPI RegQueryMultipleValuesA(HKEY hKey,PVALENTA val_list,DWORD num_vals,LPSTR lpValueBuf,LPDWORD ldwTotsize);
+   WINADVAPI LONG WINAPI RegQueryMultipleValuesW(HKEY hKey,PVALENTW val_list,DWORD num_vals,LPWSTR lpValueBuf,LPDWORD ldwTotsize);
++#endif
+   WINADVAPI LONG WINAPI RegReplaceKeyA(HKEY hKey,LPCSTR lpSubKey,LPCSTR lpNewFile,LPCSTR lpOldFile);
+   WINADVAPI LONG WINAPI RegReplaceKeyW(HKEY hKey,LPCWSTR lpSubKey,LPCWSTR lpNewFile,LPCWSTR lpOldFile);
+   WINADVAPI LONG WINAPI RegRestoreKeyA(HKEY hKey,LPCSTR lpFile,DWORD dwFlags);
+
+diff --git a/mingw-w64-libraries/winpthreads/src/thread.c b/mingw-w64-libraries/winpthreads/src/thread.c
+index 36ee66536..e5662d267 100644
+--- a/mingw-w64-libraries/winpthreads/src/thread.c
++++ b/mingw-w64-libraries/winpthreads/src/thread.c
+@@ -57,7 +57,7 @@ static pthread_t idListNextId = 0;
+ #if !defined(_MSC_VER)
+ #define USE_VEH_FOR_MSC_SETTHREADNAME
+ #endif
+-#if !WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
++#if !WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP) || defined(WIN95_COMPAT_OVERRIDE)
+ /* forbidden RemoveVectoredExceptionHandler/AddVectoredExceptionHandler APIs */
+ #undef USE_VEH_FOR_MSC_SETTHREADNAME
+ #endif
+@@ -122,7 +122,7 @@ SetThreadName (DWORD dwThreadID, LPCSTR szThreadName)
+    /* Without a debugger we *must* have an exception handler,
+     * otherwise raising an exception will crash the process.
+     */
+-#if WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
++#if defined(USE_VEH_FOR_MSC_SETTHREADNAME)
+    if ((!IsDebuggerPresent ()) && (SetThreadName_VEH_handle == NULL))
+ #else
+    if (!IsDebuggerPresent ())

@@ -45,7 +45,7 @@ RUN make ${PACKAGES} -j ${THREADS} JOBS=${JOBS} MXE_TARGETS="${MXE_TARGETS}" min
     && make clean-pkg
 
 FROM scratch as output
-COPY --from=builder /mxe/usr /
+COPY --from=builder /opt /
 
 # invoke via
 # docker build -o type=tar,dest=build/mxe.tar .
